@@ -170,7 +170,7 @@ if __name__ == '__main__':
                         help="specifies the model class that needs to be used for training, validation and testing.") 
     parser.add_argument('--batch_size', 
                         type=int, 
-                        default= 64,
+                        default= 100,
                         help = "batch size for training")
     parser.add_argument('--learning_rate', 
                         type=float, 
