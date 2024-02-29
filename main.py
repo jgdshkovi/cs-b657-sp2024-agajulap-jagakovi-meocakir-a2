@@ -147,13 +147,13 @@ def main(epochs = 100,
 
     patch_size = 16
     patch_shuffle_testset = PatchShuffled_CIFAR10(data_file_path = f'test_patch_{patch_size}.npz', transforms = transform)
-    patch_shuffle_testloader = torch.utils.data.DataLoader(patch_shuffle_testset, batch_size=64, shuffle=False)
+    patch_shuffle_testloader = torch.utils.data.DataLoader(patch_shuffle_testset, batch_size=100, shuffle=False)
     patch_shuffle_test_loss, patch_shuffle_test_acc = eval_model(net, patch_shuffle_testloader, criterion, device)
     print(f'Patch shuffle test loss for patch-size {patch_size}: {patch_shuffle_test_loss} accuracy: {patch_shuffle_test_acc}')
 
     patch_size = 8
     patch_shuffle_testset = PatchShuffled_CIFAR10(data_file_path = f'test_patch_{patch_size}.npz', transforms = transform)
-    patch_shuffle_testloader = torch.utils.data.DataLoader(patch_shuffle_testset, batch_size=64, shuffle=False)
+    patch_shuffle_testloader = torch.utils.data.DataLoader(patch_shuffle_testset, batch_size=100, shuffle=False)
     patch_shuffle_test_loss, patch_shuffle_test_acc = eval_model(net, patch_shuffle_testloader, criterion, device)
     print(f'Patch shuffle test loss for patch-size {patch_size}: {patch_shuffle_test_loss} accuracy: {patch_shuffle_test_acc}')
 
