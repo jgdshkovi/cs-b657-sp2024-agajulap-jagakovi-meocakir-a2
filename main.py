@@ -10,7 +10,7 @@ import random
 from dataset_class import PatchShuffled_CIFAR10
 from matplotlib import pyplot as plt
 import argparse
-
+from simple_vit import SimpleViT
 
 # Define the model architecture for CIFAR10
 class Net(nn.Module):
@@ -63,10 +63,10 @@ def eval_model(model, data_loader, criterion, device):
 
 
 
-def main(epochs = 100,
+def main(epochs = 40,
          model_class = 'Plain-Old-CIFAR10',
          batch_size = 128,
-         learning_rate = 1e-4,
+         learning_rate = 1e-3,
          l2_regularization = 0.0):
     
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -93,7 +93,8 @@ def main(epochs = 100,
 
     # Initialize the model, the loss function and optimizer
     if model_class == 'Plain-Old-CIFAR10':
-        net = Net().to(device)
+        # net = SimpleViT().to(device)
+        net = SimpleViT(image_size=32, patch_size=4, num_classes=10, dim=52, depth=6, heads=8, mlp_dim=1024).to(device)
     elif model_class == 'D-shuffletruffle': 
         net = Net_D_shuffletruffle().to(device)
     elif model_class == 'N-shuffletruffle':
