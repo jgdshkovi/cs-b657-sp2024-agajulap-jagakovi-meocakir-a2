@@ -21,6 +21,7 @@ class Net(nn.Module):
     def forward(self, x):
         x = self.flatten(x)
         return self.fc(x)
+    
 
 # Define the model architecture for D-shuffletruffle
 class Net_D_shuffletruffle(nn.Module):
