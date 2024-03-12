@@ -169,7 +169,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--epochs',
                         type=int,
-                        default=50,
+                        default=100,
                         help="number of epochs the model needs to be trained for")
     parser.add_argument('--model_class',
                         type=str,
