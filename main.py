@@ -110,7 +110,7 @@ def main(epochs=40,
                 _, predicted = torch.max(outputs.data, 1)
                 correct += (predicted == labels).sum().item()
                 if (i + 1) % 100 == 0:
-                    print(f"\titers: {i + 1}, epoch: {epoch + 1}")
+                    print(f"\titers: {i + 1}, epoch: {epoch + 1} | loss: {loss:.7f}")
                     speed = (time.time() - time_now) / iter_count
                     left_time = int(speed * ((epochs - epoch) * train_steps - i))
                     print(f'\tspeed: {speed:.4f} s/iter; left time: {left_time}s')
@@ -122,7 +122,7 @@ def main(epochs=40,
             cost_time = time.time() - epoch_time
             print(f'epoch - {epoch + 1} loss: {loss:.3f} accuracy: {accuracy:.3f} cost time: {cost_time:.3f}')
 
-            if (epoch + 1) % 10 == 0 and epoch > 1:
+            if (epoch + 1) % 10 == 0:
                 new_val_loss, new_val_acc = eval_model(net, valloader, criterion, device)
                 print(f'\tval_loss: {val_loss:.3f} --> {new_val_loss:.3f} | val_acc: {val_acc:.3f} --> {new_val_acc:.3f}')
                 val_acc = new_val_acc
