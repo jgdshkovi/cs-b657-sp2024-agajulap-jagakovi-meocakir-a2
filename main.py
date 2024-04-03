@@ -11,8 +11,37 @@ from dataset_class import PatchShuffled_CIFAR10
 from matplotlib import pyplot as plt
 import argparse
 from simple_vit import SimpleViT
+from swin_transformer_v2 import SwinTransformerV2
 
 # Define the model architecture for CIFAR10
+class PatchAttentionCNN(nn.Module):
+    def __init__(self):
+        super(PatchAttentionCNN, self).__init__()
+        self.conv1 = nn.Conv2d(in_channels=3, out_channels=64, kernel_size=3, stride=1, padding=1)
+        self.conv2 = nn.Conv2d(in_channels=64, out_channels=128, kernel_size=3, stride=1, padding=1)
+        self.conv3 = nn.Conv2d(in_channels=128, out_channels=256, kernel_size=3, stride=1, padding=1)
+        self.pool = nn.MaxPool2d(kernel_size=2, stride=2, padding=0)
+        self.fc = nn.Linear(256 * 8 * 8, 10)  # CIFAR-10 has 10 classes
+
+        # Attention mechanism
+        self.attention = nn.MultiheadAttention(embed_dim=256, num_heads=8)
+
+    def forward(self, x):
+        # Forward pass through CNN layers
+        x = self.pool(torch.relu(self.conv1(x)))
+        x = self.pool(torch.relu(self.conv2(x)))
+        x = self.pool(torch.relu(self.conv3(x)))
+        x = x.view(-1, 256 * 8 * 8)  # Flatten the output
+        x = self.fc(x)  # Linear layer
+
+        # Attention mechanism between patches
+        x = x.unsqueeze(0)  # Add batch dimension
+        x = x.permute(1, 0, 2)  # Reshape for attention mechanism
+        x, _ = self.attention(x, x, x)  # Multihead attention
+        x = x.squeeze(0)  # Remove batch dimension
+
+        return x
+
 class Net(nn.Module):
     def __init__(self):
         super(Net, self).__init__()
@@ -94,7 +123,10 @@ def main(epochs = 40,
     # Initialize the model, the loss function and optimizer
     if model_class == 'Plain-Old-CIFAR10':
         # net = SimpleViT().to(device)
-        net = SimpleViT(image_size=32, patch_size=4, num_classes=10, dim=52, depth=6, heads=8, mlp_dim=1024).to(device)
+        # net = SimpleViT(image_size=32, patch_size=4, num_classes=10, dim=52, depth=6, heads=8, mlp_dim=1024).to(device)
+        net = SwinTransformerV2(img_size=32, patch_size=4, in_chans=3, num_classes=10,
+                 embed_dim=128, depths=[2, 2, 6, 2], num_heads=[3, 6, 12, 24],
+                 window_size=4).to(device)
     elif model_class == 'D-shuffletruffle': 
         net = Net_D_shuffletruffle().to(device)
     elif model_class == 'N-shuffletruffle':
