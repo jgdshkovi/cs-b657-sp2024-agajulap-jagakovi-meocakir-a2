@@ -1,24 +1,12 @@
-import math
 import numpy as np
 import torch
-def adjust_learning_rate(lradj, optimizer, current_epoch, train_epochs, learning_rate):
-    if lradj == 'type1':
-        lr_adjust = {current_epoch: learning_rate * (0.5 ** ((current_epoch - 1) // 1))}
-    elif lradj == 'type2':
-        lr_adjust = {
-            2: 5e-5, 4: 1e-5, 6: 5e-6, 8: 1e-6,
-            10: 5e-7, 15: 1e-7, 20: 5e-8
-        }
-    elif lradj == "cosine":
-        lr_adjust = {current_epoch: learning_rate / 2 * (1 + math.cos(current_epoch / train_epochs * math.pi))}
-    else:
-        raise ValueError("Invalid learning rate adjustment type.")
 
-    if current_epoch in lr_adjust.keys():
-        lr = lr_adjust[current_epoch]
-        for param_group in optimizer.param_groups:
-            param_group['lr'] = lr
-        print('Updating learning rate to {}...'.format(lr))
+
+def adjust_learning_rate(optimizer, current_epoch, learning_rate):
+    lr_adjust = learning_rate * (0.5 ** ((current_epoch + 1) // 1))
+    for param_group in optimizer.param_groups:
+        param_group['lr'] = lr_adjust
+    print('Updating learning rate to {}...'.format(lr_adjust))
 
 
 class EarlyStopping:

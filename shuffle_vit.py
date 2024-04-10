@@ -85,13 +85,25 @@ class Transformer(nn.Module):
 
 
 class ShuffleViT(nn.Module):
-    def __init__(self, *, image_size, patch_size, num_classes, dim, depth, heads, mlp_dim, channels=3, dim_head=64):
+    def __init__(self, *, model_class, image_size, patch_size, num_classes, dim, depth, heads, mlp_ratio, channels=3,
+                 dim_head=64, total_image_size=32):
         super().__init__()
         self.patch_size = patch_size
-        image_height, image_width = pair(image_size)
+        self.dim = dim
+
+        if model_class == 'Plain-Old-CIFAR10':
+            self.lens_size = image_size
+        if model_class == 'D-shuffletruffle':
+            self.lens_size = 16
+        elif model_class == 'N-shuffletruffle':
+            self.lens_size = 8
+        else:
+            raise ValueError(f'Unknown model_class {model_class}')
+
+        lens_image_height, lens_image_width = pair(self.lens_size)
         patch_height, patch_width = pair(patch_size)
 
-        assert image_height % patch_height == 0 and image_width % patch_width == 0, 'Image dimensions must be divisible by the patch size.'
+        assert lens_image_height % patch_height == 0 and lens_image_width % patch_width == 0, 'Image dimensions must be divisible by the patch size.'
 
         patch_dim = channels * patch_height * patch_width
 
@@ -103,45 +115,39 @@ class ShuffleViT(nn.Module):
         )
 
         self.pos_embedding = posemb_sincos_2d(
-            h=image_height // patch_height,
-            w=image_width // patch_width,
+            h=lens_image_height // patch_height,
+            w=lens_image_width // patch_width,
             dim=dim,
         )
-
+        mlp_dim = mlp_ratio * dim
         self.transformer = Transformer(dim, depth, heads, dim_head, mlp_dim)
 
         self.pool = "mean"
         self.to_latent = nn.Identity()
 
+        lens_count = (image_size ** 2) // (self.lens_size ** 2)
         self.sequential = nn.Sequential(
-            nn.Linear(in_features=16, out_features=16),
-            nn.Dropout(p=0.4),
+            nn.Linear(in_features=lens_count, out_features=lens_count),
             nn.LeakyReLU(),
-            nn.Linear(in_features=16, out_features=16),
-            nn.LeakyReLU(),
-            nn.Dropout(p=0.4),
-            nn.Linear(in_features=16, out_features=16),
-            nn.LeakyReLU(),
-            nn.Dropout(p=0.4),
         )
-        self.project = nn.Linear(in_features=16, out_features=1, bias=True)
+        self.project = nn.Linear(in_features=lens_count, out_features=1, bias=True)
         self.linear_head = nn.Linear(dim, num_classes)
 
     def forward(self, img):
         device = img.device
-        img = rearrange(img, 'B c (h s1) (w s2) -> (h w) B c s1 s2', s1=8, s2=8)
-        x_emb = torch.zeros(16, 100, 52).to(device)
+        img = rearrange(img, 'B c (h s1) (w s2) -> (h w) B c s1 s2', s1=self.lens_size, s2=self.lens_size)
+        L, B, _, _, _ = img.shape
+        x_emb = torch.zeros(L, B, self.dim).to(device)
 
         for i, shuffled_patch in enumerate(img):
             x = self.to_patch_embedding(shuffled_patch)
             x += self.pos_embedding.to(device, dtype=x.dtype)
-
             x = self.transformer(x)
             x = x.mean(dim=1)
-
             x = self.to_latent(x)
             x_emb[i] = x
 
+        x_emb = x_emb[torch.randperm(L)]
         x_emb = x_emb.permute(1, 2, 0)
         x_emb = self.sequential(x_emb)
         x_emb = self.project(x_emb)

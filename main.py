@@ -14,8 +14,9 @@ import torchvision.transforms as transforms
 
 from dataset_class import PatchShuffled_CIFAR10
 from shuffle_vit import ShuffleViT
-from utils import adjust_learning_rate, EarlyStopping
+from simple_vit import SimpleViT
 
+from utils import adjust_learning_rate, EarlyStopping
 
 def eval_model(model, data_loader, criterion, device):
     # Evaluate the model on data from valloader
@@ -65,14 +66,21 @@ def main(epochs=40,
 
     train_steps = len(trainloader)
 
+    #  Resnet
+    # net = torch.hub.load('pytorch/vision:v0.17.1', 'resnet50', weights=None).to(device)
+    # net = torch.hub.load('pytorch/vision:v0.10.0', 'resnet34', pretrained=True)
+    # net = torch.hub.load('pytorch/vision:v0.10.0', 'resnet50', pretrained=True)
+    # net = torch.hub.load('pytorch/vision:v0.10.0', 'resnet101', pretrained=True)
+    # net = torch.hub.load('pytorch/vision:v0.10.0', 'resnet152', pretrained=True)
+
     print(train_steps)
     # Initialize the model, the loss function and optimizer
     if model_class == 'Plain-Old-CIFAR10':
-        net = ShuffleViT(image_size=8, patch_size=4, num_classes=10, dim=52, depth=6, heads=8, mlp_dim=1024).to(device)
+        net = ShuffleViT(model_class=model_class, image_size=32, patch_size=8, num_classes=10, dim=384, depth=12, heads=6, mlp_ratio=4).to(device)
     elif model_class == 'D-shuffletruffle':
-        net = ShuffleViT(image_size=8, patch_size=4, num_classes=10, dim=52, depth=6, heads=8, mlp_dim=1024).to(device)
+        net = ShuffleViT(model_class=model_class, image_size=32, patch_size=2, num_classes=10, dim=52, depth=6, heads=8, mlp_ratio=4).to(device) # SimpleViT(image_size=32, patch_size=4, num_classes=10, dim=52, depth=6, heads=8, mlp_dim=1024).to(device) #
     elif model_class == 'N-shuffletruffle':
-        net = ShuffleViT(image_size=8, patch_size=4, num_classes=10, dim=52, depth=6, heads=8, mlp_dim=1024).to(device)
+        net = ShuffleViT(model_class=model_class, image_size=32, patch_size=2, num_classes=10, dim=52, depth=6, heads=8, mlp_ratio=4).to(device)
 
     print(net)  # print model architecture
     criterion = nn.CrossEntropyLoss()
@@ -84,7 +92,7 @@ def main(epochs=40,
     if not os.path.exists('Checkpoints'):
         os.makedirs('Checkpoints')
 
-    early_stopping = EarlyStopping(patience=3, verbose=True)
+    early_stopping = EarlyStopping(patience=2, verbose=True)
 
     time_now = time.time()
 
@@ -122,12 +130,12 @@ def main(epochs=40,
             cost_time = time.time() - epoch_time
             print(f'epoch - {epoch + 1} loss: {loss:.3f} accuracy: {accuracy:.3f} cost time: {cost_time:.3f}')
 
-            if (epoch + 1) % 10 == 0:
+            if (epoch + 1) % 5 == 0:
                 new_val_loss, new_val_acc = eval_model(net, valloader, criterion, device)
                 print(f'\tval_loss: {val_loss:.3f} --> {new_val_loss:.3f} | val_acc: {val_acc:.3f} --> {new_val_acc:.3f}')
                 val_acc = new_val_acc
                 val_loss = new_val_loss
-                adjust_learning_rate('type1', optimizer, (epoch / 10) + 1, (epochs / 10) + 1, learning_rate)
+                adjust_learning_rate(optimizer, int(epoch / 5), learning_rate)
                 early_stopping(val_loss, net, 'Checkpoints')
                 if early_stopping.early_stop:
                     print("Early stopping")
@@ -182,7 +190,7 @@ if __name__ == '__main__':
                         help="batch size for training")
     parser.add_argument('--learning_rate',
                         type=float,
-                        default=0.001,
+                        default=0.004,
                         help="learning rate for training")
     parser.add_argument('--l2_regularization',
                         type=float,
