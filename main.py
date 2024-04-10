@@ -93,9 +93,10 @@ def main(epochs=40,
         os.makedirs('Checkpoints')
 
     early_stopping = EarlyStopping(patience=2, verbose=True)
+    h_flip = transforms.RandomHorizontalFlip(p=0.5)
+    v_flip = transforms.RandomVerticalFlip(p=0.5)
 
     time_now = time.time()
-
     # Train the model
     try:
         for epoch in range(epochs):
@@ -109,6 +110,7 @@ def main(epochs=40,
                 iter_count += 1
                 inputs, labels = data
                 inputs, labels = inputs.to(device), labels.to(device)
+                inputs = torch.stack([v_flip(h_flip(img)) for img in inputs])
                 optimizer.zero_grad()
                 outputs = net(inputs)
                 loss = criterion(outputs, labels)
