@@ -14,7 +14,7 @@ def adjust_learning_rate(optimizer, current_epoch, learning_rate):
 
 def model_picker(model_class):
     if model_class == 'Plain-Old-CIFAR10':
-        net = SimpleViT(image_size=32, patch_size=4, num_classes=10, dim=52, depth=6, heads=8, mlp_dim=1024)
+        net = SimpleViT(image_size=32, patch_size=8, num_classes=10, dim=192, depth=12, heads=3, mlp_dim=768)
     elif model_class == 'D-shuffletruffle':
         net = ShuffleViT(model_class=model_class, image_size=32, patch_size=2, num_classes=10, dim=52, depth=6, heads=8, mlp_ratio=4)
     elif model_class == 'N-shuffletruffle':

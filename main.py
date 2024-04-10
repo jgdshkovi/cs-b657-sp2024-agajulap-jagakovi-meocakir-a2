@@ -49,14 +49,16 @@ def main(epochs=40,
     # Load and preprocess the dataset, feel free to add other transformations that don't shuffle the patches.
     # (Note - augmentations are typically not performed on validation set)
     transform_train = transforms.Compose([
-        transforms.ToTensor(),
         transforms.RandomVerticalFlip(p=0.5),
         transforms.RandomHorizontalFlip(p=0.5),
         transforms.ColorJitter(brightness=0.2, contrast=0.2, saturation=0.2, hue=0.1),
+        transforms.ToTensor(),
+        transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
     ])
 
     transform_test = transforms.Compose([
         transforms.ToTensor(),
+        transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
     ])
 
     # Initialize training, validation and test dataset
@@ -137,7 +139,7 @@ def main(epochs=40,
         pass
 
     # Load the final model
-    net.load_state_dict(torch.load(f'Checkpoints/{model_class}.pth'))
+    net.load_state_dict(torch.load('Checkpoints/checkpoint.pth'))
 
     net.eval()
     # Evaluate the model on the test set
@@ -164,7 +166,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--epochs',
                         type=int,
-                        default=100,
+                        default=200,
                         help="number of epochs the model needs to be trained for")
     parser.add_argument('--model_class',
                         type=str,

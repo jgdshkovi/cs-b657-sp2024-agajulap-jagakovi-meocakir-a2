@@ -1,7 +1,9 @@
+import numpy as np
 import torch.utils.data
 import torchvision
 import torchvision.transforms as transforms
 from matplotlib import pyplot as plt
+from sklearn.decomposition import PCA
 from torch import nn
 
 from create_data import shuffle
@@ -19,11 +21,9 @@ transform_test = transforms.Compose([
 
 def evaluate_model(net, batch_size=100):
     testset = torchvision.datasets.CIFAR10(root='./data', train=False, download=True, transform=transform_test)
-
     testloader = torch.utils.data.DataLoader(testset, batch_size=batch_size, shuffle=False)
     criterion = nn.CrossEntropyLoss()
 
-    net.eval()
     # Evaluate the model on the test set
     test_loss, test_acc = eval_model(net, testloader, criterion, device)
     print('Test loss: %.3f accuracy: %.3f' % (test_loss, test_acc))
@@ -82,6 +82,51 @@ def sample_analysis(net):
                        model_class)
 
 
+def pca_analysis(net, model_class, batch_size=100):
+    testset = torchvision.datasets.CIFAR10(root='./data', train=False, download=True, transform=transform_test)
+    testloader = torch.utils.data.DataLoader(testset, batch_size=batch_size, shuffle=False)
+
+    features = []
+    labels = []
+    with torch.no_grad():
+        for data in testloader:
+            inputs, batch_labels = data
+            outputs = net(inputs.to(device))
+            features.append(outputs.cpu().numpy())
+            labels.append(batch_labels.cpu().numpy())
+
+    features = np.concatenate(features, axis=0)
+    labels = np.concatenate(labels, axis=0)
+
+    pca = PCA(n_components=2)
+    reduced_features = pca.fit_transform(features)
+
+    plt.figure(figsize=(10, 8))
+    for i, class_name in enumerate(classes):
+        idx = labels == i
+        plt.scatter(reduced_features[idx, 0], reduced_features[idx, 1], label=class_name, alpha=0.5)
+    plt.title(f'PCA of {model_class}')
+    plt.legend()
+    filename = f'Figures/pca_{model_class}.png'
+    plt.savefig(filename)
+    print(f'Figure saved to {filename}')
+
+
+def _extract_features_and_labels(dataloader, model):
+    model.eval()
+    features = []
+    all_labels = []
+    with torch.no_grad():
+        for inputs, labels in dataloader:
+            inputs = inputs.to(next(model.parameters()).device)
+            _, pre_final = model(inputs)
+            features.append(pre_final.cpu())
+            all_labels.append(labels)
+    features = torch.cat(features, 0)
+    all_labels = torch.cat(all_labels, 0)
+    return features.numpy(), all_labels.numpy()
+
+
 def _visualize_samples(samples, predictions, labels, title, model_class):
     fig, axes = plt.subplots(len(samples) + 1, len(samples[0]), figsize=(10, 2 * (len(samples) + 1)))
     column_titles = ['Original', '16x16 Shuffled', '8x8 Shuffled']
@@ -112,6 +157,8 @@ if __name__ == '__main__':
     net = model_picker(model_class).to(device)
 
     net.load_state_dict(torch.load(f'Checkpoints/{model_class}.pth'))
+    net.eval()
 
     evaluate_model(net)
     sample_analysis(net)
+    pca_analysis(net, model_class)
