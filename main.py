@@ -7,16 +7,15 @@ import time
 
 import numpy as np
 import torch
+import torch.utils.data
 import torch.nn as nn
 import torch.optim as optim
 import torchvision
 import torchvision.transforms as transforms
 
 from dataset_class import PatchShuffled_CIFAR10
-from shuffle_vit import ShuffleViT
-from simple_vit import SimpleViT
+from utils import adjust_learning_rate, EarlyStopping, model_picker
 
-from utils import adjust_learning_rate, EarlyStopping
 
 def eval_model(model, data_loader, criterion, device):
     # Evaluate the model on data from valloader
@@ -49,15 +48,23 @@ def main(epochs=40,
 
     # Load and preprocess the dataset, feel free to add other transformations that don't shuffle the patches.
     # (Note - augmentations are typically not performed on validation set)
-    transform = transforms.Compose([
-        transforms.ToTensor()])
+    transform_train = transforms.Compose([
+        transforms.ToTensor(),
+        transforms.RandomVerticalFlip(p=0.5),
+        transforms.RandomHorizontalFlip(p=0.5),
+        transforms.ColorJitter(brightness=0.2, contrast=0.2, saturation=0.2, hue=0.1),
+    ])
+
+    transform_test = transforms.Compose([
+        transforms.ToTensor(),
+    ])
 
     # Initialize training, validation and test dataset
-    trainset = torchvision.datasets.CIFAR10(root='./data', train=True, download=True, transform=transform)
+    trainset = torchvision.datasets.CIFAR10(root='./data', train=True, download=True, transform=transform_train)
     trainset, valset = torch.utils.data.random_split(trainset, [40000, 10000],
                                                      generator=torch.Generator().manual_seed(0))
 
-    testset = torchvision.datasets.CIFAR10(root='./data', train=False, download=True, transform=transform)
+    testset = torchvision.datasets.CIFAR10(root='./data', train=False, download=True, transform=transform_test)
 
     # Initialize Dataloaders
     trainloader = torch.utils.data.DataLoader(trainset, batch_size=batch_size, shuffle=True)
@@ -65,22 +72,7 @@ def main(epochs=40,
     testloader = torch.utils.data.DataLoader(testset, batch_size=batch_size, shuffle=False)
 
     train_steps = len(trainloader)
-
-    #  Resnet
-    # net = torch.hub.load('pytorch/vision:v0.17.1', 'resnet50', weights=None).to(device)
-    # net = torch.hub.load('pytorch/vision:v0.10.0', 'resnet34', pretrained=True)
-    # net = torch.hub.load('pytorch/vision:v0.10.0', 'resnet50', pretrained=True)
-    # net = torch.hub.load('pytorch/vision:v0.10.0', 'resnet101', pretrained=True)
-    # net = torch.hub.load('pytorch/vision:v0.10.0', 'resnet152', pretrained=True)
-
-    print(train_steps)
-    # Initialize the model, the loss function and optimizer
-    if model_class == 'Plain-Old-CIFAR10':
-        net = ShuffleViT(model_class=model_class, image_size=32, patch_size=8, num_classes=10, dim=384, depth=12, heads=6, mlp_ratio=4).to(device)
-    elif model_class == 'D-shuffletruffle':
-        net = ShuffleViT(model_class=model_class, image_size=32, patch_size=2, num_classes=10, dim=52, depth=6, heads=8, mlp_ratio=4).to(device) # SimpleViT(image_size=32, patch_size=4, num_classes=10, dim=52, depth=6, heads=8, mlp_dim=1024).to(device) #
-    elif model_class == 'N-shuffletruffle':
-        net = ShuffleViT(model_class=model_class, image_size=32, patch_size=2, num_classes=10, dim=52, depth=6, heads=8, mlp_ratio=4).to(device)
+    net = model_picker(model_class).to(device)
 
     print(net)  # print model architecture
     criterion = nn.CrossEntropyLoss()
@@ -93,8 +85,6 @@ def main(epochs=40,
         os.makedirs('Checkpoints')
 
     early_stopping = EarlyStopping(patience=2, verbose=True)
-    h_flip = transforms.RandomHorizontalFlip(p=0.5)
-    v_flip = transforms.RandomVerticalFlip(p=0.5)
 
     time_now = time.time()
     # Train the model
@@ -110,7 +100,6 @@ def main(epochs=40,
                 iter_count += 1
                 inputs, labels = data
                 inputs, labels = inputs.to(device), labels.to(device)
-                inputs = torch.stack([v_flip(h_flip(img)) for img in inputs])
                 optimizer.zero_grad()
                 outputs = net(inputs)
                 loss = criterion(outputs, labels)
@@ -132,12 +121,12 @@ def main(epochs=40,
             cost_time = time.time() - epoch_time
             print(f'epoch - {epoch + 1} loss: {loss:.3f} accuracy: {accuracy:.3f} cost time: {cost_time:.3f}')
 
-            if (epoch + 1) % 5 == 0:
+            if (epoch + 1) % 10 == 0:
                 new_val_loss, new_val_acc = eval_model(net, valloader, criterion, device)
                 print(f'\tval_loss: {val_loss:.3f} --> {new_val_loss:.3f} | val_acc: {val_acc:.3f} --> {new_val_acc:.3f}')
                 val_acc = new_val_acc
                 val_loss = new_val_loss
-                adjust_learning_rate(optimizer, int(epoch / 5), learning_rate)
+                adjust_learning_rate(optimizer, int(epoch / 10), learning_rate)
                 early_stopping(val_loss, net, 'Checkpoints')
                 if early_stopping.early_stop:
                     print("Early stopping")
@@ -148,27 +137,23 @@ def main(epochs=40,
         pass
 
     # Load the final model
-    net.load_state_dict(torch.load('Checkpoints/checkpoint.pth'))
+    net.load_state_dict(torch.load(f'Checkpoints/{model_class}.pth'))
 
-    transform = transforms.Compose([
-        transforms.ToTensor()
-    ])
     net.eval()
     # Evaluate the model on the test set
     test_loss, test_acc = eval_model(net, testloader, criterion, device)
     print('Test loss: %.3f accuracy: %.3f' % (test_loss, test_acc))
 
     # Evaluate the model on the patch shuffled test data
-
     patch_size = 16
-    patch_shuffle_testset = PatchShuffled_CIFAR10(data_file_path=f'test_patch_{patch_size}.npz', transforms=transform)
+    patch_shuffle_testset = PatchShuffled_CIFAR10(data_file_path=f'test_patch_{patch_size}.npz', transforms=transform_test)
     patch_shuffle_testloader = torch.utils.data.DataLoader(patch_shuffle_testset, batch_size=batch_size, shuffle=False)
     patch_shuffle_test_loss, patch_shuffle_test_acc = eval_model(net, patch_shuffle_testloader, criterion, device)
     print(
         f'Patch shuffle test loss for patch-size {patch_size}: {patch_shuffle_test_loss} accuracy: {patch_shuffle_test_acc}')
 
     patch_size = 8
-    patch_shuffle_testset = PatchShuffled_CIFAR10(data_file_path=f'test_patch_{patch_size}.npz', transforms=transform)
+    patch_shuffle_testset = PatchShuffled_CIFAR10(data_file_path=f'test_patch_{patch_size}.npz', transforms=transform_test)
     patch_shuffle_testloader = torch.utils.data.DataLoader(patch_shuffle_testset, batch_size=batch_size, shuffle=False)
     patch_shuffle_test_loss, patch_shuffle_test_acc = eval_model(net, patch_shuffle_testloader, criterion, device)
     print(

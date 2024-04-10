@@ -1,6 +1,9 @@
 import numpy as np
 import torch
 
+from shuffle_vit import ShuffleViT
+from simple_vit import SimpleViT
+
 
 def adjust_learning_rate(optimizer, current_epoch, learning_rate):
     lr_adjust = learning_rate * (0.5 ** ((current_epoch + 1) // 1))
@@ -8,6 +11,17 @@ def adjust_learning_rate(optimizer, current_epoch, learning_rate):
         param_group['lr'] = lr_adjust
     print('Updating learning rate to {}...'.format(lr_adjust))
 
+
+def model_picker(model_class):
+    if model_class == 'Plain-Old-CIFAR10':
+        net = SimpleViT(image_size=32, patch_size=4, num_classes=10, dim=52, depth=6, heads=8, mlp_dim=1024)
+    elif model_class == 'D-shuffletruffle':
+        net = ShuffleViT(model_class=model_class, image_size=32, patch_size=2, num_classes=10, dim=52, depth=6, heads=8, mlp_ratio=4)
+    elif model_class == 'N-shuffletruffle':
+        net = ShuffleViT(model_class=model_class, image_size=32, patch_size=2, num_classes=10, dim=52, depth=6, heads=8, mlp_ratio=4)
+    else:
+        raise ValueError(f'Unknown model class: {model_class}')
+    return net
 
 class EarlyStopping:
     def __init__(self, patience=7, verbose=False, delta=0):
