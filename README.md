@@ -22,6 +22,13 @@ epochs, model_class, batch size, learning rate, and L2 regularization strength.
 | N-shuffletruffle  | 55.06      | 55.02         | 55.06       |
 
 
+## PCA Analysis
+### D-shuffletruffle
+![pca-d-shuffle](Figures/pca_D-shuffletruffle.png "pca-D-shuffletruffle.png" ) 
+
+### N-shuffletruffle
+![pca-d-shuffle](Figures/pca_N-shuffletruffle.png "pca-D-shuffletruffle.png" ) 
+
 ## Sample Analysis
 
 ### D-shuffletruffle
