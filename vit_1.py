@@ -10,31 +10,6 @@ from torch import Tensor
 from einops import rearrange
 from einops import repeat
 
-to_tensor = [Resize((32, 32)), ToTensor()]
-
-class Compose(object):
-    def __init__(self, transforms):
-        self.transforms = transforms
-
-    def __call__(self, image, target):
-        for t in self.transforms:
-            image = t(image)
-        return image, target
-
-# def show_images(images, num_samples=40, cols=8):
-#     """ Plots some samples from the dataset """
-#     plt.figure(figsize=(15,15))
-#     idx = int(len(dataset) / num_samples)
-#     print(images)
-#     for i, img in enumerate(images):
-#         if i % idx == 0:
-#             plt.subplot(int(num_samples/cols) + 1, cols, int(i/idx) + 1)
-#             plt.imshow(to_pil_image(img[0]))
-
-# 200 images for each pet
-# dataset = OxfordIIITPet(root=".", download=True, transforms=Compose(to_tensor))
-# show_images(dataset)
-
 class PatchEmbedding(nn.Module):
     def __init__(self, in_channels = 3, patch_size = 8, emb_size = 128):
         self.patch_size = patch_size
@@ -107,7 +82,7 @@ class ResidualAdd(nn.Module):
 
 class ViT(nn.Module):
     def __init__(self, ch=3, img_size=32, patch_size=8, emb_dim=32,
-                n_layers=6, out_dim=37, dropout=0.1, heads=2):
+                n_layers=6, out_dim=10, dropout=0.1, heads=2):
         # increase heads
         super(ViT, self).__init__()
 
