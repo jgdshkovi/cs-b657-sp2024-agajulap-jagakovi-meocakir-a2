@@ -16,6 +16,7 @@ classes = ('plane', 'car', 'bird', 'cat',
 
 transform_test = transforms.Compose([
     transforms.ToTensor(),
+    transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
 ])
 
 
@@ -47,34 +48,36 @@ def evaluate_model(net, batch_size=100):
 
 
 def sample_analysis(net):
-    testset = torchvision.datasets.CIFAR10(root='./data', train=False, download=True, transform=transform_test)
+    testset = torchvision.datasets.CIFAR10(root='./data', train=False, download=True, transform=transforms.ToTensor())
     testloader = torch.utils.data.DataLoader(testset, batch_size=1, shuffle=False)  # Load one by one
     samples, predictions, labels = [], [], []
     with torch.no_grad():
         for i, (data, target) in enumerate(testloader):
             if i >= 25:  # process the first 25 samples
                 break
-            original_img = data.to('cpu')
             label = target.item()
+            data = data.to('cpu')
             # Shuffle images
             img_16x16 = torch.tensor(
-                shuffle(16, original_img.clone().squeeze(0).permute(1, 2, 0).detach().numpy())).permute(2, 0,
+                shuffle(16, data.clone().squeeze(0).permute(1, 2, 0).detach().numpy())).permute(2, 0,
                                                                                                         1).unsqueeze(
                 0).to(device)
             img_8x8 = torch.tensor(
-                shuffle(8, original_img.clone().squeeze(0).permute(1, 2, 0).detach().numpy())).permute(2, 0,
+                shuffle(8, data.clone().squeeze(0).permute(1, 2, 0).detach().numpy())).permute(2, 0,
                                                                                                        1).unsqueeze(
                 0).to(device)
             original_img = data.to(device)
 
             versions = [original_img, img_16x16, img_8x8]
             version_preds = []
+            norm = transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
 
             for version in versions:
-                output = net(version)
-                pred = output.argmax(dim=0, keepdim=True).item()
-                version_preds.append(pred)
-
+                output = net(norm(version.clone()))
+                if output.dim() == 1:
+                    output = output.unsqueeze(0)
+                _, predicted = torch.max(output.data, 1)
+                version_preds.append(predicted.item())
             samples.append([original_img.cpu(), img_16x16.cpu(), img_8x8.cpu()])
             predictions.append(version_preds)
             labels.append(label)
@@ -152,7 +155,10 @@ def _visualize_samples(samples, predictions, labels, title, model_class):
 if __name__ == '__main__':
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-    model_class = 'N-shuffletruffle'
+    model_class = 'Plain-Old-CIFAR10'
+    # model_class = 'D-shuffletruffle'
+    # model_class = 'N-shuffletruffle'
+
     print(f'Evaluating {model_class}...')
     net = model_picker(model_class).to(device)
 

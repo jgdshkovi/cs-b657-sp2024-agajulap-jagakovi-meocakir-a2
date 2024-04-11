@@ -9,36 +9,45 @@ epochs, model_class, batch size, learning rate, and L2 regularization strength.
 
 | Model             | Unshuffled | 16x16 Shuffle | 8x8 Shuffle |
 |-------------------|------------|---------------|-------------|
-| Plain-Old-CIFAR10 |            |               |             |
-| D-shuffletruffle  | 1.15       | 1.16          | 1.54        |
-| N-shuffletruffle  | 1.26       | 1.26          | 1.26        |
+| Plain-Old-CIFAR10 | 0.78       | 2.38          | 2.89        |
+| D-shuffletruffle  | 1.14       | 1.14          | 1.47        |
+| N-shuffletruffle  | 1.27       | 1.27          | 1.27        |
 
 ### Accuracy
 
 | Model             | Unshuffled | 16x16 Shuffle | 8x8 Shuffle |
 |-------------------|------------|---------------|-------------|
-| Plain-Old-CIFAR10 |            |               |             |
-| D-shuffletruffle  | 58.96      | 58.93         | 47.06       |
-| N-shuffletruffle  | 55.06      | 55.02         | 55.06       |
-
+| Plain-Old-CIFAR10 | 74.70      | 36.33         | 26.41       |
+| D-shuffletruffle  | 59.77      | 59.7          | 48.34       |
+| N-shuffletruffle  | 54.720     | 54.63         | 54.68       |
 
 ## PCA Analysis
+
+### Plain-Old-CIFAR10
+
+![pca-p-shuffle](Figures/pca_Plain-Old-CIFAR10.png "pca-p-shuffletruffle.png" )
+
 ### D-shuffletruffle
-![pca-d-shuffle](Figures/pca_D-shuffletruffle.png "pca-D-shuffletruffle.png" ) 
+
+![pca-d-shuffle](Figures/pca_D-shuffletruffle.png "pca-d-shuffletruffle.png" )
 
 ### N-shuffletruffle
-![pca-d-shuffle](Figures/pca_N-shuffletruffle.png "pca-D-shuffletruffle.png" ) 
+
+![pca-n-shuffle](Figures/pca_N-shuffletruffle.png "pca-n-shuffletruffle.png" )
 
 ## Sample Analysis
 
-### D-shuffletruffle
-![d-shuffle](Figures/D-shuffletruffle.png "D-shuffletruffle.png" ) 
+### Plain-Old-CIFAR10
 
+![p-shuffle](Figures/Plain-Old-CIFAR10.png "p-shuffletruffle.png" )
+
+### D-shuffletruffle
+
+![d-shuffle](Figures/D-shuffletruffle.png "d-shuffletruffle.png" )
 
 ### N-shuffletruffle
-![n-shuffle](Figures/N-shuffletruffle.png "N-shuffletruffle.png")
 
-
+![n-shuffle](Figures/N-shuffletruffle.png "n-shuffletruffle.png")
 
 ## Example Command
 
