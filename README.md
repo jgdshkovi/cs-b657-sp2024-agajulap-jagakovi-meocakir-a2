@@ -116,6 +116,18 @@ the test dataset, including every variant of the sampled images for each best pe
 #### N-shuffletruffle
 
 ![n-shuffle](Figures/N-shuffletruffle.png "n-shuffletruffle.png")
+
+### Conclusion
+
+We observed that most pre-existing architectures excel at Plain-Old-CIFAR10 but completely fail at both shuffled test 
+sets. This is expected since shuffling creates unexpected spatial contexts for the model. An ideal d/n-shuffletruffle 
+should process the patches completely independently and in a random order. We attempted to achieve this with ShuffleViT. 
+Although it achieves complete shuffle invariance, the overall accuracy is subpar compared to ResNet. We believe that a 
+similar approach to ShuffleViT can be attempted in a CNN-based model as well to achieve higher accuracy without 
+sacrificing shuffle invariance.
+
+
+
 ## Contributions
 - **meocakir:** Implemented the training cycle (early stopping, decreasing learning rate and better logging). Implemented evaluation code (including figures). Implemented and experimented with ShuffleViT architecture. Experimented with Resnet architecture to achieve high accuracy. 
 - **jagakovi:** ...
