@@ -1,51 +1,79 @@
-## Description
+# Assignment 2 Report
 
-The python script main.py trains a model on CIFAR10 dataset using PyTorch. It allows you to specify the number of
-epochs, model_class, batch size, learning rate, and L2 regularization strength.
+In this assignment, we report our results on developing `Plain-Old-CIFAR10`, `D-shuffletruffle`, and `N-shuffletruffle`
+models.
 
-## Model Performance
+**Plain-Old-CIFAR10:** This model is developed with the goal of achieving the highest unshuffled accuracy possible.
+Achieving similar accuracy with the shuffled datasets is not considered.
 
-### Loss
+**D-shuffletruffle:** This model is developed with the goal of achieving similar accuracy between unshuffled and `16x16`
+shuffle datasets while having an acceptable accuracy.
 
-| Model             | Unshuffled | 16x16 Shuffle | 8x8 Shuffle |
-|-------------------|------------|---------------|-------------|
-| Plain-Old-CIFAR10 | 0.78       | 2.38          | 2.89        |
-| D-shuffletruffle  | 1.14       | 1.14          | 1.47        |
-| N-shuffletruffle  | 1.27       | 1.27          | 1.27        |
+**N-shuffletruffle:** This model is developed with the goal of achieving similar accuracy between unshuffled and `8x8`
+shuffle datasets while having an acceptable accuracy.
 
-### Accuracy
+## Architectures
 
-| Model             | Unshuffled | 16x16 Shuffle | 8x8 Shuffle |
-|-------------------|------------|---------------|-------------|
-| Plain-Old-CIFAR10 | 74.70      | 36.33         | 26.41       |
-| D-shuffletruffle  | 59.77      | 59.7          | 48.34       |
-| N-shuffletruffle  | 54.720     | 54.63         | 54.68       |
+In this section we will briefly explain the architectures employed in our experimentation
 
-## PCA Analysis
+### ShuffleViT
 
-### Plain-Old-CIFAR10
+ShuffleViT is a specialized architecture designed for D-shuffletruffle and N-shuffletruffle tasks. It's based on the
+classical ViT architecture. In this modified architecture, instead of processing the entire image as is, we first split
+the image into different patches and process every patch independently using the transformer module in a random order.
+This way, we achieve shuffle invariance.
+
+### Resnet50
+
+For this dataset we observed that CNN-based models worekd better than transformer-based models. So for the
+Plain-Old-CIFAR10 task, we employed Resnet50 architecture.
+
+## Results
+
+In this section, we will present the performance of our models. We also provide PCA analysis and present 12 samples from
+the test dataset, including every variant of the sampled images for each best performing model.
+
+### Test Loss
+
+| Model Class       | Architecture | Unshuffled | 16x16 Shuffle | 8x8 Shuffle |
+|-------------------|--------------|------------|---------------|-------------|
+| Plain-Old-CIFAR10 | Resnet50     | 0.78       | 2.38          | 2.89        |
+| D-shuffletruffle  | ShuffleViT   | 1.14       | 1.14          | 1.47        |
+| N-shuffletruffle  | ShuffleViT   | 1.27       | 1.27          | 1.27        |
+
+### Test Accuracy
+
+| Model Class       | Architecture | Unshuffled | 16x16 Shuffle | 8x8 Shuffle |
+|-------------------|--------------|------------|---------------|-------------|
+| Plain-Old-CIFAR10 | Resnet50     | 74.70      | 36.33         | 26.41       |
+| D-shuffletruffle  | ShuffleViT   | 59.77      | 59.7          | 48.34       |
+| N-shuffletruffle  | ShuffleViT   | 54.720     | 54.63         | 54.68       |
+
+### PCA Analysis
+
+#### Plain-Old-CIFAR10
 
 ![pca-p-shuffle](Figures/pca_Plain-Old-CIFAR10.png "pca-p-shuffletruffle.png" )
 
-### D-shuffletruffle
+#### D-shuffletruffle
 
 ![pca-d-shuffle](Figures/pca_D-shuffletruffle.png "pca-d-shuffletruffle.png" )
 
-### N-shuffletruffle
+#### N-shuffletruffle
 
 ![pca-n-shuffle](Figures/pca_N-shuffletruffle.png "pca-n-shuffletruffle.png" )
 
-## Sample Analysis
+### Sample Analysis
 
-### Plain-Old-CIFAR10
+#### Plain-Old-CIFAR10
 
 ![p-shuffle](Figures/Plain-Old-CIFAR10.png "p-shuffletruffle.png" )
 
-### D-shuffletruffle
+#### D-shuffletruffle
 
 ![d-shuffle](Figures/D-shuffletruffle.png "d-shuffletruffle.png" )
 
-### N-shuffletruffle
+#### N-shuffletruffle
 
 ![n-shuffle](Figures/N-shuffletruffle.png "n-shuffletruffle.png")
 
