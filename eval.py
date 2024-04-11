@@ -1,3 +1,5 @@
+import sys
+
 import numpy as np
 import torch.utils.data
 import torchvision
@@ -154,10 +156,7 @@ def _visualize_samples(samples, predictions, labels, title, model_class):
 
 if __name__ == '__main__':
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-
-    model_class = 'Plain-Old-CIFAR10'
-    # model_class = 'D-shuffletruffle'
-    # model_class = 'N-shuffletruffle'
+    model_class = sys.argv[1] if len(sys.argv) > 1 else 'Plain-Old-CIFAR10'
 
     print(f'Evaluating {model_class}...')
     net = model_picker(model_class).to(device)

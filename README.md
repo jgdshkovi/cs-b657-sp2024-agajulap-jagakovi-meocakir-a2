@@ -12,6 +12,46 @@ shuffle datasets while having an acceptable accuracy.
 **N-shuffletruffle:** This model is developed with the goal of achieving similar accuracy between unshuffled and `8x8`
 shuffle datasets while having an acceptable accuracy.
 
+## Training
+
+We also heavily modified the default train cycle. We implement better logging and also implement decreasing learning
+weight and early stopping for faster and more precise training. 
+
+We employ 3 main data augmentation steps:
+- Random Vertical Flip
+- Random Horizontal Flip
+- ColorJitter
+
+
+## How to Run
+
+### Running Training Code
+This code will run the training cycle code for the given model class.
+
+```sh
+python main.py --epochs 10 --model_class 'Plain-Old-CIFAR10' - -batch_size 128 - -learning_rate 0.01 - -l2_regularization 0.0001
+```
+
+## Options
+
+- epochs (int): Number of epochs for training (default: 100).
+- model_class (str): Model class name. Choices - 'Plain-Old-CIFAR10','D-shuffletruffle','N-shuffletruffle'. (default: '
+  Plain-Old-CIFAR10')
+- batch_size (int): Batch size for training (default: 100).
+- learning_rate (float): Learning rate for the optimizer (default: 0.004).
+- l2_regularization (float): L2 regularization strength (default: 0.0).
+
+### Running Evaluation
+This code will execute the evaluation for the specified model class. It will generate the evaluation results and figures 
+in the results section of this report.
+
+```sh
+python eval.py <model-class>
+```
+- model_class (str): Model class name. Choices - 'Plain-Old-CIFAR10','D-shuffletruffle','N-shuffletruffle'. (default: '
+  Plain-Old-CIFAR10')
+
+
 ## Architectures
 
 In this section we will briefly explain the architectures employed in our experimentation
@@ -76,18 +116,7 @@ the test dataset, including every variant of the sampled images for each best pe
 #### N-shuffletruffle
 
 ![n-shuffle](Figures/N-shuffletruffle.png "n-shuffletruffle.png")
-
-## Example Command
-
-```sh
-python main.py --epochs 10 --model_class 'Plain-Old-CIFAR10' - -batch_size 128 - -learning_rate 0.01 - -l2_regularization 0.0001
-```
-
-## Options
-
-- epochs (int): Number of epochs for training (default: 100).
-- model_class (str): Model class name. Choices - 'Plain-Old-CIFAR10','D-shuffletruffle','N-shuffletruffle'. (default: '
-  Plain-Old-CIFAR10')
-- batch_size (int): Batch size for training (default: 128).
-- learning_rate (float): Learning rate for the optimizer (default: 0.01).
-- l2_regularization (float): L2 regularization strength (default: 0.0).
+## Contributions
+- **meocakir:** Implemented the training cycle (early stopping, decreasing learning rate and better logging). Implemented evaluation code (including figures). Implemented and experimented with ShuffleViT architecture. Experimented with Resnet architecture to achieve high accuracy. 
+- **jagakovi:** ...
+- **agajulap:** ...
