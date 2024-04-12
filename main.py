@@ -10,8 +10,8 @@ import random
 from dataset_class import PatchShuffled_CIFAR10
 from matplotlib import pyplot as plt
 import argparse
-from vit_1 import SimpleViT
-from vit_2 import ViT
+from vit_1 import ViT
+
 # from swin_transformer_v2 import SwinTransformerV2
 
 # Define the model architecture for CIFAR10
@@ -125,7 +125,7 @@ def main(epochs = 100,
     if model_class == 'Plain-Old-CIFAR10':
         # net = SimpleViT().to(device)
         # net = SimpleViT(image_size=32, patch_size=4, num_classes=10, dim=52, depth=6, heads=8, mlp_dim=1024).to(device)
-          net = ViT(ch = 3, img_size = 32, patch_size=4, emb_dim=128, n_layers = 6, out_dim= 10, dropout= 0.1, heads = 8).to(device)
+          net = ViT(image_size=32, patch_size=4, num_classes=10, dim=52, depth=6, heads=8, mlp_dim=1024).to(device)
         # net = SwinTransformerV2(img_size=32, patch_size=4, in_chans=3, num_classes=10,
         #          embed_dim=128, depths=[2, 2, 6, 2], num_heads=[3, 6, 12, 24],
         #          window_size=4).to(device)
