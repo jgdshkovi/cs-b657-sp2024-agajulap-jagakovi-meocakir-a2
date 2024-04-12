@@ -94,8 +94,8 @@ def main(epochs = 100,
 
     # Initialize the model, the loss function and optimizer
     if model_class == 'Plain-Old-CIFAR10':
-        net = ViT(ch=3, img_size=32, patch_size=8, emb_dim=32,
-                n_layers=6, out_dim=10, dropout=0.1, heads=4).to(device)
+        net = ViT(ch=3, img_size=32, patch_size=4, emb_dim=128,
+                n_layers=6, out_dim=10, dropout=0.1, heads=8).to(device)
     elif model_class == 'D-shuffletruffle': 
         net = Net_D_shuffletruffle().to(device)
     elif model_class == 'N-shuffletruffle':
