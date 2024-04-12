@@ -34,6 +34,19 @@ class FeedForward(nn.Module):
     def forward(self, x):
         return self.net(x)
 
+class AttentionPooling(nn.Module):
+    def __init__(self, dim, num_heads):
+        super().__init__()
+        self.num_heads = num_heads
+        self.attention_pool = nn.MultiheadAttention(embed_dim=dim, num_heads=num_heads)
+        self.query = nn.Parameter(torch.randn(1, 1, dim))
+
+    def forward(self, x):
+        batch_size = x.shape[0]
+        query = self.query.repeat(batch_size, 1, 1)  # Repeat the query for each item in the batch
+        x, _ = self.attention_pool(query, x, x)  # Key and value are the same as the input
+        return x.squeeze(1)  # Remove the query dimension to get the pooled output
+
 class Attention(nn.Module):
     def __init__(self, dim, heads = 8, dim_head = 64):
         super().__init__()
@@ -62,14 +75,14 @@ class Attention(nn.Module):
         return self.to_out(out)
 
 class Transformer(nn.Module):
-    def __init__(self, dim, depth, heads, dim_head, mlp_dim):
+    def __init__(self, dim, depth, heads, dim_head, mlp_dim, dropout_rate):
         super().__init__()
         self.norm = nn.LayerNorm(dim)
         self.layers = nn.ModuleList([])
         for _ in range(depth):
             self.layers.append(nn.ModuleList([
-                Attention(dim, heads = heads, dim_head = dim_head),
-                FeedForward(dim, mlp_dim)
+                Attention(dim, heads = heads, dim_head = dim_head, dropout=dropout_rate),
+                FeedForward(dim, mlp_dim, dropout=dropout_rate)
             ]))
     def forward(self, x):
         for attn, ff in self.layers:
@@ -78,7 +91,7 @@ class Transformer(nn.Module):
         return self.norm(x)
 
 class ViT(nn.Module):
-    def __init__(self, *, image_size, patch_size, num_classes, dim, depth, heads, mlp_dim, channels = 3, dim_head = 64):
+    def __init__(self, *, image_size, patch_size, num_classes, dim, depth, heads, mlp_dim, channels = 3, dim_head = 64, dropout_rate=0.1):
         super().__init__()
         image_height, image_width = pair(image_size)
         patch_height, patch_width = pair(patch_size)
@@ -100,12 +113,15 @@ class ViT(nn.Module):
             dim = dim,
         ) 
 
-        self.transformer = Transformer(dim, depth, heads, dim_head, mlp_dim)
+        self.transformer = Transformer(dim, depth, heads, dim_head, mlp_dim, dropout_rate=dropout_rate)
 
-        self.pool = "mean"
+        self.attention_pooling = AttentionPooling(dim, heads)
         self.to_latent = nn.Identity()
 
-        self.linear_head = nn.Linear(dim, num_classes)
+        self.linear_head = nn.Sequential(
+            nn.Dropout(dropout_rate),  # Additional dropout before the classifier
+            nn.Linear(dim, num_classes)
+        )
 
     def forward(self, img):
         device = img.device
@@ -114,7 +130,7 @@ class ViT(nn.Module):
         x += self.pos_embedding.to(device, dtype=x.dtype)
 
         x = self.transformer(x)
-        x = x.mean(dim = 1)
+        x = self.attention_pooling(x)
 
         x = self.to_latent(x)
         return self.linear_head(x)
