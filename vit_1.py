@@ -81,8 +81,8 @@ class ResidualAdd(nn.Module):
     
 
 class ViT(nn.Module):
-    def __init__(self, ch=3, img_size=32, patch_size=8, emb_dim=32,
-                n_layers=6, out_dim=10, dropout=0.1, heads=2):
+    def __init__(self, ch=3, img_size=32, patch_size=4, emb_dim=128,
+                n_layers=6, out_dim=10, dropout=0.1, heads=4):
         # increase heads
         super(ViT, self).__init__()
 
