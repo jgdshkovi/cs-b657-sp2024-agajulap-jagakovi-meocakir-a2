@@ -45,7 +45,7 @@ class Attention(nn.Module):
     def __init__(self, dim, n_heads, dropout):
         super().__init__()
         self.n_heads = n_heads
-        self.att = torch.nn.MultiheadAttention(embed_dim=dim,
+        self.att = torch.nn.MultiheadAttention(embed_dim=64*n_heads,
                                                num_heads=n_heads,
                                                dropout=dropout)
         self.q = torch.nn.Linear(dim, 64*n_heads)
