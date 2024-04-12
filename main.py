@@ -10,8 +10,8 @@ import random
 from dataset_class import PatchShuffled_CIFAR10
 from matplotlib import pyplot as plt
 import argparse
-from simple_vit import SimpleViT
-from swin_transformer_v2 import SwinTransformerV2
+from vit_1 import SimpleViT
+# from swin_transformer_v2 import SwinTransformerV2
 
 # Define the model architecture for CIFAR10
 class PatchAttentionCNN(nn.Module):
