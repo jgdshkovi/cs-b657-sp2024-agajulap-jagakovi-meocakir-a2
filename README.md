@@ -86,6 +86,7 @@ the test dataset, including every variant of the sampled images for each best pe
 | Model Class       | Architecture | Unshuffled | 16x16 Shuffle | 8x8 Shuffle |
 |-------------------|--------------|------------|---------------|-------------|
 | Plain-Old-CIFAR10 | Resnet50     | 74.70      | 36.33         | 26.41       |
+| Plain-Old-CIFAR10 | EffNetV2     | 79.00      | 45.95         | 34.30       |
 | D-shuffletruffle  | ShuffleViT   | 59.77      | 59.7          | 48.34       |
 | N-shuffletruffle  | ShuffleViT   | 54.720     | 54.63         | 54.68       |
 
