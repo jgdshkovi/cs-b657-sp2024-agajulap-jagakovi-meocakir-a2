@@ -23,16 +23,20 @@ def posemb_sincos_2d(h, w, dim, temperature: int = 10000, dtype = torch.float32)
 # classes
 
 class FeedForward(nn.Module):
-    def __init__(self, dim, hidden_dim):
+    def __init__(self, dim, hidden_dim, dropout_rate=0.1):  # Include dropout_rate parameter
         super().__init__()
         self.net = nn.Sequential(
             nn.LayerNorm(dim),
             nn.Linear(dim, hidden_dim),
             nn.GELU(),
+            nn.Dropout(dropout_rate),  # Add a dropout layer after activation
             nn.Linear(hidden_dim, dim),
+            nn.Dropout(dropout_rate)  # Optionally, add dropout after the second linear layer too
         )
+
     def forward(self, x):
         return self.net(x)
+
 
 class AttentionPooling(nn.Module):
     def __init__(self, dim, num_heads):
@@ -43,12 +47,21 @@ class AttentionPooling(nn.Module):
 
     def forward(self, x):
         batch_size = x.shape[0]
-        query = self.query.repeat(batch_size, 1, 1)  # Repeat the query for each item in the batch
-        x, _ = self.attention_pool(query, x, x)  # Key and value are the same as the input
-        return x.squeeze(1)  # Remove the query dimension to get the pooled output
+        query = self.query.repeat(batch_size, 1, 1)
+        
+        # Transpose x and query to fit [sequence_length, batch_size, feature_dim]
+        x_transposed = x.transpose(0, 1)  # Change to [64, 100, 64]
+        query_transposed = query.transpose(0, 1)  # Change to [1, 100, 64]
+
+        # Apply attention
+        x_pooled, _ = self.attention_pool(query_transposed, x_transposed, x_transposed)
+        x_pooled = x_pooled.transpose(0, 1)  # Transpose back to [batch_size, sequence_length, feature_dim]
+
+        # Since we are pooling, we generally want a single vector per item in the batch
+        return x_pooled.mean(dim=1)
 
 class Attention(nn.Module):
-    def __init__(self, dim, heads = 8, dim_head = 64):
+    def __init__(self, dim, heads = 8, dim_head = 64,  dropout_rate=0.1):
         super().__init__()
         inner_dim = dim_head *  heads
         self.heads = heads
@@ -59,6 +72,7 @@ class Attention(nn.Module):
 
         self.to_qkv = nn.Linear(dim, inner_dim * 3, bias = False)
         self.to_out = nn.Linear(inner_dim, dim, bias = False)
+        self.dropout = nn.Dropout(dropout_rate)  # Dropout layer for the attention
 
     def forward(self, x):
         x = self.norm(x)
@@ -69,6 +83,7 @@ class Attention(nn.Module):
         dots = torch.matmul(q, k.transpose(-1, -2)) * self.scale
 
         attn = self.attend(dots)
+        attn = self.dropout(attn)
 
         out = torch.matmul(attn, v)
         out = rearrange(out, 'b h n d -> b n (h d)')
@@ -81,8 +96,8 @@ class Transformer(nn.Module):
         self.layers = nn.ModuleList([])
         for _ in range(depth):
             self.layers.append(nn.ModuleList([
-                Attention(dim, heads = heads, dim_head = dim_head, dropout=dropout_rate),
-                FeedForward(dim, mlp_dim, dropout=dropout_rate)
+                Attention(dim, heads = heads, dim_head = dim_head, dropout_rate=dropout_rate),
+                FeedForward(dim, mlp_dim, dropout_rate=dropout_rate)
             ]))
     def forward(self, x):
         for attn, ff in self.layers:
@@ -130,6 +145,7 @@ class ViT(nn.Module):
         x += self.pos_embedding.to(device, dtype=x.dtype)
 
         x = self.transformer(x)
+        # print(f"Shape before attention pooling: {x.shape}")  # Debug output
         x = self.attention_pooling(x)
 
         x = self.to_latent(x)
