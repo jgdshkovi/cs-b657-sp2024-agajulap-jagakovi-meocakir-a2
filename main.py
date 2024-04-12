@@ -65,8 +65,8 @@ def eval_model(model, data_loader, criterion, device):
 
 def main(epochs = 100,
          model_class = 'Plain-Old-CIFAR10',
-         batch_size = 128,
-         learning_rate = 1e-3,
+         batch_size = 32,
+         learning_rate = 1e-2,
          l2_regularization = 0.0):
     
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -77,7 +77,6 @@ def main(epochs = 100,
     # Load and preprocess the dataset, feel free to add other transformations that don't shuffle the patches. 
     # (Note - augmentations are typically not performed on validation set)
     transform = transforms.Compose([
-        transforms.Resize((32, 32)),
         transforms.ToTensor()])
 
     
@@ -94,8 +93,8 @@ def main(epochs = 100,
 
     # Initialize the model, the loss function and optimizer
     if model_class == 'Plain-Old-CIFAR10':
-        net = ViT(ch=3, img_size=32, patch_size=4, emb_dim=128,
-                n_layers=6, out_dim=10, dropout=0.1, heads=8).to(device)
+        net = ViT(ch=3, img_size=32, patch_size=4, emb_dim=32,
+                n_layers=6, out_dim=10, dropout=0.1, heads=2).to(device)
     elif model_class == 'D-shuffletruffle': 
         net = Net_D_shuffletruffle().to(device)
     elif model_class == 'N-shuffletruffle':

@@ -101,7 +101,7 @@ class ViT(nn.Module):
         num_patches = (img_size // patch_size) ** 2
         self.pos_embedding = nn.Parameter(
             torch.randn(1, num_patches + 1, emb_dim))
-        self.cls_token = nn.Parameter(torch.rand(1, 1, emb_dim))
+        self.cls_token = nn.Parameter(torch.randn(1, 1, emb_dim))
 
         # Transformer Encoder
         self.layers = nn.ModuleList([])
@@ -121,8 +121,8 @@ class ViT(nn.Module):
         b, n, _ = x.shape
 
         # Add cls token to inputs
-        cls_tokens = repeat(self.cls_token, '1 1 d -> b 1 d', b = b)
-        x = torch.cat([cls_tokens, x], dim=1)
+        cls_tokens = self.cls_token.expand(b, -1, -1)
+        x = torch.cat((cls_tokens, x), dim=1)
         x += self.pos_embedding[:, :(n + 1)]
 
         # Transformer layers
