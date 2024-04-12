@@ -56,7 +56,7 @@ class Attention(nn.Module):
         q = self.q(x)
         k = self.k(x)
         v = self.v(x)
-        attn_output, attn_output_weights = self.att(x, x, x)
+        attn_output, attn_output_weights = self.att(q, k, v)
         return attn_output
 
 class PreNorm(nn.Module):
