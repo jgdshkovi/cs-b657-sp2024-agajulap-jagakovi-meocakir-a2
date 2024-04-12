@@ -48,16 +48,17 @@ class Attention(nn.Module):
         self.att = torch.nn.MultiheadAttention(embed_dim=dim,
                                                num_heads=n_heads,
                                                dropout=dropout)
-        self.q = torch.nn.Linear(dim, dim)
-        self.k = torch.nn.Linear(dim, dim)
-        self.v = torch.nn.Linear(dim, dim)
+        self.q = torch.nn.Linear(dim, 64*n_heads)
+        self.k = torch.nn.Linear(dim, 64*n_heads)
+        self.v = torch.nn.Linear(dim, 64*n_heads)
+        self.to_out = torch.nn.Linear(64*n_heads, dim)
 
     def forward(self, x):
         q = self.q(x)
         k = self.k(x)
         v = self.v(x)
         attn_output, attn_output_weights = self.att(q, k, v)
-        return attn_output
+        return self.to_out(attn_output)
 
 class PreNorm(nn.Module):
     def __init__(self, dim, fn):
@@ -122,7 +123,7 @@ class ViT(nn.Module):
         for _ in range(n_layers):
             transformer_block = nn.Sequential(
                 ResidualAdd(PreNorm(emb_dim, Attention(emb_dim, n_heads = heads, dropout = dropout))),
-                ResidualAdd(PreNorm(emb_dim, FeedForward(emb_dim, emb_dim, dropout = dropout))))
+                ResidualAdd(PreNorm(emb_dim, FeedForward(emb_dim, 2*emb_dim, dropout = dropout))))
             self.layers.append(transformer_block)
 
         # Classification head
