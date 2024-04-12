@@ -1,133 +1,120 @@
 import torch
-from torchvision.datasets import OxfordIIITPet
-import matplotlib.pyplot as plt
-from random import random
-from torchvision.transforms import Resize, ToTensor
-from torchvision.transforms.functional import to_pil_image
 from torch import nn
-from einops.layers.torch import Rearrange
-from torch import Tensor
+
 from einops import rearrange
-from einops import repeat
+from einops.layers.torch import Rearrange
 
-class PatchEmbedding(nn.Module):
-    def __init__(self, in_channels = 3, patch_size = 8, emb_size = 128):
-        self.patch_size = patch_size
+# helpers
+
+def pair(t):
+    return t if isinstance(t, tuple) else (t, t)
+
+def posemb_sincos_2d(h, w, dim, temperature: int = 10000, dtype = torch.float32):
+    y, x = torch.meshgrid(torch.arange(h), torch.arange(w), indexing="ij")
+    assert (dim % 4) == 0, "feature dimension must be multiple of 4 for sincos emb"
+    omega = torch.arange(dim // 4) / (dim // 4 - 1)
+    omega = 1.0 / (temperature ** omega)
+
+    y = y.flatten()[:, None] * omega[None, :]
+    x = x.flatten()[:, None] * omega[None, :]
+    pe = torch.cat((x.sin(), x.cos(), y.sin(), y.cos()), dim=1)
+    return pe.type(dtype)
+
+# classes
+
+class FeedForward(nn.Module):
+    def __init__(self, dim, hidden_dim):
         super().__init__()
-        self.projection = nn.Sequential(
-            # break-down the image in s1 x s2 patches and flat them
-            Rearrange('b c (h p1) (w p2) -> b (h w) (p1 p2 c)', p1=patch_size, p2=patch_size),
-            nn.Linear(patch_size * patch_size * in_channels, emb_size)
-        )
-
-    def forward(self, x: Tensor) -> Tensor:
-        x = self.projection(x)
-        return x
-
-# Run a quick test
-# sample_datapoint = torch.unsqueeze(dataset[0][0], 0)
-# print("Initial shape: ", sample_datapoint.shape)
-# embedding = PatchEmbedding()(sample_datapoint)
-# print("Patches shape: ", embedding.shape)
-
-class Attention(nn.Module):
-    def __init__(self, dim, n_heads, dropout):
-        super().__init__()
-        self.n_heads = n_heads
-        self.att = torch.nn.MultiheadAttention(embed_dim=dim,
-                                               num_heads=n_heads,
-                                               dropout=dropout)
-        self.q = torch.nn.Linear(dim, dim)
-        self.k = torch.nn.Linear(dim, dim)
-        self.v = torch.nn.Linear(dim, dim)
-
-    def forward(self, x):
-        q = self.q(x)
-        k = self.k(x)
-        v = self.v(x)
-        attn_output, attn_output_weights = self.att(x, x, x)
-        return attn_output
-
-class PreNorm(nn.Module):
-    def __init__(self, dim, fn):
-        super().__init__()
-        self.norm = nn.LayerNorm(dim)
-        self.fn = fn
-    def forward(self, x, **kwargs):
-        return self.fn(self.norm(x), **kwargs)
-
-class FeedForward(nn.Sequential):
-    def __init__(self, dim, hidden_dim, dropout = 0.):
-        super().__init__(
+        self.net = nn.Sequential(
+            nn.LayerNorm(dim),
             nn.Linear(dim, hidden_dim),
             nn.GELU(),
-            nn.Dropout(dropout),
             nn.Linear(hidden_dim, dim),
-            nn.Dropout(dropout)
         )
-# ff = FeedForward(dim=128, hidden_dim=256)
-# ff(torch.ones((1, 5, 128))).shape
+    def forward(self, x):
+        return self.net(x)
 
-class ResidualAdd(nn.Module):
-    def __init__(self, fn):
+class Attention(nn.Module):
+    def __init__(self, dim, heads = 8, dim_head = 64):
         super().__init__()
-        self.fn = fn
+        inner_dim = dim_head *  heads
+        self.heads = heads
+        self.scale = dim_head ** -0.5
+        self.norm = nn.LayerNorm(dim)
 
-    def forward(self, x, **kwargs):
-        res = x
-        x = self.fn(x, **kwargs)
-        x += res
-        return x
-    
+        self.attend = nn.Softmax(dim = -1)
 
-class ViT(nn.Module):
-    def __init__(self, ch=3, img_size=32, patch_size=4, emb_dim=128,
-                n_layers=6, out_dim=10, dropout=0.1, heads=4):
-        # increase heads
-        super(ViT, self).__init__()
+        self.to_qkv = nn.Linear(dim, inner_dim * 3, bias = False)
+        self.to_out = nn.Linear(inner_dim, dim, bias = False)
 
-        # Attributes
-        self.channels = ch
-        self.height = img_size
-        self.width = img_size
-        self.patch_size = patch_size
-        self.n_layers = n_layers
+    def forward(self, x):
+        x = self.norm(x)
 
-        # Patching
-        self.patch_embedding = PatchEmbedding(in_channels=ch,
-                                              patch_size=patch_size,
-                                              emb_size=emb_dim)
-        # Learnable params
-        num_patches = (img_size // patch_size) ** 2
-        self.pos_embedding = nn.Parameter(
-            torch.randn(1, num_patches + 1, emb_dim))
-        self.cls_token = nn.Parameter(torch.randn(1, 1, emb_dim))
+        qkv = self.to_qkv(x).chunk(3, dim = -1)
+        q, k, v = map(lambda t: rearrange(t, 'b n (h d) -> b h n d', h = self.heads), qkv)
 
-        # Transformer Encoder
+        dots = torch.matmul(q, k.transpose(-1, -2)) * self.scale
+
+        attn = self.attend(dots)
+
+        out = torch.matmul(attn, v)
+        out = rearrange(out, 'b h n d -> b n (h d)')
+        return self.to_out(out)
+
+class Transformer(nn.Module):
+    def __init__(self, dim, depth, heads, dim_head, mlp_dim):
+        super().__init__()
+        self.norm = nn.LayerNorm(dim)
         self.layers = nn.ModuleList([])
-        for _ in range(n_layers):
-            transformer_block = nn.Sequential(
-                ResidualAdd(PreNorm(emb_dim, Attention(emb_dim, n_heads = heads, dropout = dropout))),
-                ResidualAdd(PreNorm(emb_dim, FeedForward(emb_dim, emb_dim, dropout = dropout))))
-            self.layers.append(transformer_block)
+        for _ in range(depth):
+            self.layers.append(nn.ModuleList([
+                Attention(dim, heads = heads, dim_head = dim_head),
+                FeedForward(dim, mlp_dim)
+            ]))
+    def forward(self, x):
+        for attn, ff in self.layers:
+            x = attn(x) + x
+            x = ff(x) + x
+        return self.norm(x)
 
-        # Classification head
-        self.head = nn.Sequential(nn.LayerNorm(emb_dim), nn.Linear(emb_dim, out_dim))
+class SimpleViT(nn.Module):
+    def __init__(self, *, image_size, patch_size, num_classes, dim, depth, heads, mlp_dim, channels = 3, dim_head = 64):
+        super().__init__()
+        image_height, image_width = pair(image_size)
+        patch_height, patch_width = pair(patch_size)
 
+        assert image_height % patch_height == 0 and image_width % patch_width == 0, 'Image dimensions must be divisible by the patch size.'
+
+        patch_dim = channels * patch_height * patch_width
+
+        self.to_patch_embedding = nn.Sequential(
+            Rearrange("b c (h p1) (w p2) -> b (h w) (p1 p2 c)", p1 = patch_height, p2 = patch_width),
+            nn.LayerNorm(patch_dim),
+            nn.Linear(patch_dim, dim),
+            nn.LayerNorm(dim),
+        )
+
+        self.pos_embedding = posemb_sincos_2d(
+            h = image_height // patch_height,
+            w = image_width // patch_width,
+            dim = dim,
+        ) 
+
+        self.transformer = Transformer(dim, depth, heads, dim_head, mlp_dim)
+
+        self.pool = "mean"
+        self.to_latent = nn.Identity()
+
+        self.linear_head = nn.Linear(dim, num_classes)
 
     def forward(self, img):
-        # Get patch embedding vectors
-        x = self.patch_embedding(img)
-        b, n, _ = x.shape
+        device = img.device
 
-        # Add cls token to inputs
-        cls_tokens = self.cls_token.expand(b, -1, -1)
-        x = torch.cat((cls_tokens, x), dim=1)
-        x += self.pos_embedding[:, :(n + 1)]
+        x = self.to_patch_embedding(img)
+        x += self.pos_embedding.to(device, dtype=x.dtype)
 
-        # Transformer layers
-        for i in range(self.n_layers):
-            x = self.layers[i](x)
+        x = self.transformer(x)
+        x = x.mean(dim = 1)
 
-        # Output based on classification token
-        return self.head(x[:, 0, :])
+        x = self.to_latent(x)
+        return self.linear_head(x)
