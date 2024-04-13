@@ -92,11 +92,10 @@ the test dataset, including every variant of the sampled images for each best pe
 | N-shuffletruffle  | ShuffleViT   | 54.720     | 54.63         | 54.68       |
 
 ### Acc/Loss plots
-This plot was generated during testing of SimpleViT model architecture with limited epochs.
-![acc-loss-plot](training_metrics_plot.png "training_metrics_plot.png" )
-
-The validation accuracy and loss below are all over place, need to smoothen it out.
-![cifar-validation](Validation_metrics_plotTest.png "Validation_metrics_plotTest.png" )
+This plot generated during testing of SimpleViT model architecture with limited epochs are attached.
+<!-- ![acc-loss-plot](training_metrics_plot.png "training_metrics_plot.png" ) -->
+Also, the validation accuracy and loss below are all over place, need to smoothen it out.
+<!-- ![cifar-validation](Validation_metrics_plotTest.png "Validation_metrics_plotTest.png" ) -->
 
 ### PCA Analysis
 
