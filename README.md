@@ -138,5 +138,5 @@ sacrificing shuffle invariance.
 
 ## Contributions
 - **meocakir:** Implemented the training cycle (early stopping, decreasing learning rate and better logging). Implemented evaluation code (including figures). Implemented and experimented with ShuffleViT architecture. Experimented with Resnet architecture to achieve high accuracy. 
-- **jagakovi:** Implemented SimpleViT(with help from tutorials) & EfficientNetV2-S atchitecture. Fine-tuned SOTA pre-trained models on CIFAR-10 -> tested on shuffled test-sets, just to compare with the models we built. Tried to implement Swin Transformer, but failed to code the architecture.
+- **jagakovi:** Implemented SimpleViT(with help from tutorials) & EfficientNetV2-S atchitecture. Fine-tuned SOTA pre-trained models on CIFAR-10 -> tested on shuffled test-sets, just to compare with the models we built. Tried to implement SWIN & MoE kind of thing with ViT, but failed to code the architectures.
 - **agajulap:** Implemented the Attentive Pooling, and Dropout techniques for the vision transformer. Experimented with Simple ViT architecture. 
