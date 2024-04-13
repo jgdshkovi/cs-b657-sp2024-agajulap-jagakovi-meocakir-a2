@@ -87,6 +87,7 @@ the test dataset, including every variant of the sampled images for each best pe
 |-------------------|--------------|------------|---------------|-------------|
 | Plain-Old-CIFAR10 | Resnet50     | 74.70      | 36.33         | 26.41       |
 | Plain-Old-CIFAR10 | EffNetV2     | 78.52      | 45.95         | 34.30       |
+| Plain-Old-CIFAR10 | SimpleViT    | 71.50      | 42.52         | 39.01       |
 | D-shuffletruffle  | ShuffleViT   | 59.77      | 59.7          | 48.34       |
 | N-shuffletruffle  | ShuffleViT   | 54.720     | 54.63         | 54.68       |
 
@@ -132,4 +133,4 @@ sacrificing shuffle invariance.
 ## Contributions
 - **meocakir:** Implemented the training cycle (early stopping, decreasing learning rate and better logging). Implemented evaluation code (including figures). Implemented and experimented with ShuffleViT architecture. Experimented with Resnet architecture to achieve high accuracy. 
 - **jagakovi:** ...
-- **agajulap:** ...
+- **agajulap:** Implemented the Attentive Pooling, and Dropout techniques for the vision transformer. Experimented with Simple ViT architecture. 
