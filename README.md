@@ -91,6 +91,8 @@ the test dataset, including every variant of the sampled images for each best pe
 | D-shuffletruffle  | ShuffleViT   | 59.77      | 59.7          | 48.34       |
 | N-shuffletruffle  | ShuffleViT   | 54.720     | 54.63         | 54.68       |
 
+### Acc/Loss plots
+![acc-loss-plot](training_metrics_plot.png "training_metrics_plot.png" )
 ### PCA Analysis
 
 #### Plain-Old-CIFAR10
