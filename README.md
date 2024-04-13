@@ -132,5 +132,5 @@ sacrificing shuffle invariance.
 
 ## Contributions
 - **meocakir:** Implemented the training cycle (early stopping, decreasing learning rate and better logging). Implemented evaluation code (including figures). Implemented and experimented with ShuffleViT architecture. Experimented with Resnet architecture to achieve high accuracy. 
-- **jagakovi:** ...
+- **jagakovi:** Implemented SimpleViT(with help from tutorials), EfficientNetV2-S atchitecture. Tested shuffled test-sets with the SOTA pre-trained models, just to compare the models we built.
 - **agajulap:** Implemented the Attentive Pooling, and Dropout techniques for the vision transformer. Experimented with Simple ViT architecture. 
