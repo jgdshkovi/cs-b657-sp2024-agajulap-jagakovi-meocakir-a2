@@ -93,7 +93,7 @@ def eval_model(model, data_loader, criterion, device):
 
 
 
-def main(epochs = 60,
+def main(epochs = 40,
          model_class = 'Plain-Old-CIFAR10',
          batch_size = 128,
          learning_rate = 1e-3,
