@@ -93,7 +93,7 @@ def eval_model(model, data_loader, criterion, device):
 
 
 
-def main(epochs = 40,
+def main(epochs = 60,
          model_class = 'Plain-Old-CIFAR10',
          batch_size = 128,
          learning_rate = 1e-3,
@@ -125,7 +125,7 @@ def main(epochs = 40,
     if model_class == 'Plain-Old-CIFAR10':
         # net = SimpleViT().to(device)
         # net = SimpleViT(image_size=32, patch_size=4, num_classes=10, dim=52, depth=6, heads=8, mlp_dim=1024).to(device)
-          net = ViT(image_size=32, patch_size=4, num_classes=10, dim=64, depth=6, heads=8, mlp_dim=1024, dropout_rate=0.2).to(device)
+          net = ViT(image_size=32, patch_size=4, num_classes=10, dim=64, depth=6, heads=8, mlp_dim=1024, dropout_rate=0.3).to(device)
         # net = SwinTransformerV2(img_size=32, patch_size=4, in_chans=3, num_classes=10,
         #          embed_dim=128, depths=[2, 2, 6, 2], num_heads=[3, 6, 12, 24],
         #          window_size=4).to(device)
