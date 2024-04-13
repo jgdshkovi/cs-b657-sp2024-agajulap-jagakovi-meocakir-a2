@@ -11,6 +11,7 @@ from dataset_class import PatchShuffled_CIFAR10
 from matplotlib import pyplot as plt
 import argparse
 from simple_vit import SimpleViT
+from vmoegpt import SimpleViTMoE
 from swin_transformer_v2 import SwinTransformerV2
 
 # Define the model architecture for CIFAR10
@@ -105,8 +106,12 @@ def main(epochs = 40,
     
     # Load and preprocess the dataset, feel free to add other transformations that don't shuffle the patches. 
     # (Note - augmentations are typically not performed on validation set)
-    transform = transforms.Compose([
-        transforms.ToTensor()])
+    transform = transforms.Compose(
+        [
+            transforms.ToTensor(),
+            transforms.RandomHorizontalFlip(),
+            transforms.RandomRotation(degrees=(-15, 15)),
+        ])
 
     
     # Initialize training, validation and test dataset
@@ -122,16 +127,19 @@ def main(epochs = 40,
 
     # Initialize the model, the loss function and optimizer
     if model_class == 'Plain-Old-CIFAR10':
-        # net = SimpleViT().to(device)
+        ## Please use the model which we have saved, 'vit_cifar10.pth'
+        net = SimpleViTMoE().to(device)
         # net = SimpleViT(image_size=32, patch_size=4, num_classes=10, dim=52, depth=6, heads=8, mlp_dim=1024).to(device)
-        net = SwinTransformerV2(img_size=32, patch_size=4, in_chans=3, num_classes=10,
-                 embed_dim=128, depths=[2, 2, 6, 2], num_heads=[3, 6, 12, 24],
-                 window_size=4).to(device)
+        # net = SwinTransformerV2(img_size=32, patch_size=4, in_chans=3, num_classes=10,
+        #          embed_dim=128, depths=[2, 2, 6, 2], num_heads=[3, 6, 12, 24],
+        #          window_size=4).to(device)
     elif model_class == 'D-shuffletruffle': 
+        ## Please use the model which we have saved, 'vit_cifar10.pth' 
         net = Net_D_shuffletruffle().to(device)
     elif model_class == 'N-shuffletruffle':
+        ## Please use the model which we have saved, 'vit_cifar10.pth'
         net = Net_N_shuffletruffle().to(device)
-    
+
     print(net) # print model architecture
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.Adam(net.parameters(), lr = learning_rate, weight_decay= l2_regularization)
